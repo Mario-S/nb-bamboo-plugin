@@ -1,3 +1,16 @@
+/* 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.netbeans.modules.bamboo.client.rest;
 
 
@@ -92,6 +105,10 @@ public class BambooInstanceProperties extends HashMap<String, String> {
         return o;
     }
 
+    /**
+     * This method returns <code>true</code> if the instance is persisted.
+     * @return boolean
+     */
     public final boolean isPersisted() {
         String pers = get(INSTANCE_PERSISTED);
 
@@ -106,6 +123,10 @@ public class BambooInstanceProperties extends HashMap<String, String> {
         pcs.removePropertyChangeListener(l);
     }
 
+    /**
+     * Returns all listeners which are currently registered.
+     * @return a collection of property change listeners.
+     */
     public List<PropertyChangeListener> getCurrentListeners() {
         return Arrays.asList(pcs.getPropertyChangeListeners());
     }

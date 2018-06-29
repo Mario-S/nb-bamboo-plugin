@@ -1,3 +1,16 @@
+/* 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.netbeans.modules.bamboo.ui.actions;
 
 import java.util.Collection;
@@ -84,24 +97,23 @@ public class ShowChangesAction extends AbstractResultAction {
     }
 
     private void printChanges(String name, Collection<ChangeVo> changes) {
-        OutputWriter out = getOut(name);
-        changes.forEach(change -> {
-            StringBuilder builder = new StringBuilder();
-            builder.append(DateFormatter.format(change.getDate())).append(SPC);
-            builder.append(change.getAuthor()).append(SPC).append(change.getComment());
-            out.println(builder.toString());
+        try (OutputWriter out = getOut(name)) {
+            changes.forEach(change -> {
+                StringBuilder builder = new StringBuilder();
+                builder.append(DateFormatter.format(change.getDate())).append(SPC);
+                builder.append(change.getAuthor()).append(SPC).append(change.getComment());
+                out.println(builder.toString());
 
-            final String commitUrl = change.getCommitUrl();
-            out.println(commitUrl, Hyperlink.from(() -> BrowserInstance.Instance.showURL(commitUrl)));
-            out.println();
+                final String commitUrl = change.getCommitUrl();
+                out.println(commitUrl, Hyperlink.from(() -> BrowserInstance.Instance.showURL(commitUrl)));
+                out.println();
 
-            change.getFiles().forEach(file -> {
-                out.println(format(" %s", file.getName()));
+                change.getFiles().forEach(file -> {
+                    out.println(format(" %s", file.getName()));
+                });
+                out.println("\n");
             });
-            out.println("\n");
-        });
-        out.close();
+        }
     }
-
 
 }

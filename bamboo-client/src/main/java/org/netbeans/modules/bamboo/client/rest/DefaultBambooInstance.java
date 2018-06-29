@@ -1,3 +1,16 @@
+/* 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.netbeans.modules.bamboo.client.rest;
 
 import static java.lang.String.format;
@@ -42,7 +55,6 @@ import static java.util.Collections.emptyList;
 
 import org.netbeans.modules.bamboo.model.rcp.PlanVo;
 import org.netbeans.modules.bamboo.model.event.QueueEvent;
-import org.netbeans.modules.bamboo.model.event.QueueEvent.QueueEventBuilder;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 
@@ -84,6 +96,8 @@ class DefaultBambooInstance extends DefaultInstanceValues implements BambooInsta
     private final List<String> suppressedPlans;
 
     private BambooInstanceProperties properties;
+    
+    private Optional<QueueEvent> previousEvent;
 
     DefaultBambooInstance(final BambooInstanceProperties properties) {
         this(null, null);
@@ -97,7 +111,8 @@ class DefaultBambooInstance extends DefaultInstanceValues implements BambooInsta
         this.content = new InstanceContent();
         this.lookup = new AbstractLookup(content);
         this.suppressedPlans = new ArrayList<>();
-        this.client = client;
+        this.previousEvent = empty();
+        this.client = client;     
 
         addConnectionListener();
     }
@@ -188,16 +203,28 @@ class DefaultBambooInstance extends DefaultInstanceValues implements BambooInsta
     }
 
     private void synchronizeProjects() {
-        Collection<ProjectVo> oldProjects = this.projects;
-        if (oldProjects == null || oldProjects.isEmpty()) {
+        Collection<ProjectVo> previous = copyProjects();
+        
+        if (previous.isEmpty()) {
             Collection<ProjectVo> newProjects = client.getProjects();
             setChildren(newProjects);
-            fireProjectsChanged(oldProjects, newProjects);
+            fireProjectsChanged(previous, newProjects);
         } else {
             client.updateProjects(this.projects);
             updateParent(this.projects);
-            fireProjectsChanged(oldProjects, this.projects);
+            fireProjectsChanged(previous, this.projects);
         }
+    }
+
+    /**
+     * Copy the previous synchronized projects into a new collection.
+     */
+    private Collection<ProjectVo> copyProjects() {
+        Collection<ProjectVo> oldProjects = new ArrayList<>();
+        if(this.projects != null) {
+            oldProjects.addAll(this.projects);
+        }
+        return oldProjects;
     }
 
     //set the parent if not present
@@ -304,8 +331,10 @@ class DefaultBambooInstance extends DefaultInstanceValues implements BambooInsta
             final Optional<ProjectVo> parent = plan.getParent();
             if (isChild(parent) && verifyAvailibility()) {
                 Response response = client.queue(plan);
-                QueueEventBuilder eventBuilder = QueueEvent.builder().plan(plan).response(response);
-                content.add(eventBuilder.build());
+                QueueEvent event = QueueEvent.builder().plan(plan).response(response).build();
+                previousEvent.ifPresent(content::remove);
+                content.add(event);
+                previousEvent = of(event);
             }
         });
     }
